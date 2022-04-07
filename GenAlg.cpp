@@ -16,28 +16,31 @@ struct Chromosome
     }
 };
 
+//TODO: Fix errors
+
 int evaluateFitness(Chromosome chrom, int target);
 //evaluates the expression to be solved and returns the number of genes //done
 int evaluateExpression(string expression);
 
-void getCoefficients(string expression,vector<int> coef); 
+void getCoefficients(string expression,vector<int> &coef); 
 //will return a list containing the number of Chromosomes with populated genes
 Chromosome* createPopulation(int populationSize);
 
 Chromosome crossoverGenes(Chromosome inputChromosome);
 
-void generateGenes(vector<chromosome> population, int limit);
+void generateGenes(vector<Chromosome> &population, int limit);
 
 //
 void mutate(Chromosome inputChromosome);
 
-int g_chromosomeLength;
 int g_numChromosomes;
 double g_mutationRate;
 double g_crossoverRate;
-int chromosomeLength;
+int g_chromosomeLength;
 int targetValue; //Most fit functions will produce this value
 vector<int> g_coefficients; 
+int limit;
+int g_target;
 int main(int argc, char *argv[]){
     string expression;
     //initialize #chromosomes, mutation rate, crossover rate...
@@ -76,17 +79,17 @@ int main(int argc, char *argv[]){
 // it assumes that chromosomeLength and coefficients are global (for now)
 int evaluateFitness(Chromosome chrom){
     int tempSum = 0; 
-    for (int i = 0; i < chromsomeLength; i++){ //chromsomeLength is the same as the number of coefficients in the function
-        tempSum = tempSum + (chrom.genes[i] * coefficients[i]); //this will not work without coefficients
+    for (int i = 0; i < g_chromsomeLength; i++){ //chromsomeLength is the same as the number of coefficients in the function
+        tempSum = tempSum + (chrom.genes[i] * g_coefficients[i]); //this will not work without coefficients
     }
-    return abs(tempSum - target); // the absolute value of the difference between tempSum and the target = fitness.
+    return abs(tempSum - g_target); // the absolute value of the difference between tempSum and the target = fitness.
     // A value close to 0 means it is more fit. Farther from 0 means it is less fit.
 }
 // gets the number of letter variables from the expression
 int evaluateExpression(string expression){
     int numGenes=0;
     for(int i=0;i<expression.length();i++){
-        if(isalpha(line[i])){
+        if(isalpha(expression[i])){
             numGenes++;
         }
     }
@@ -94,7 +97,7 @@ int evaluateExpression(string expression){
 }
 
 
-void getCoefficients(String expression, vector<int> coef){ //get coefficients from initially given function
+void getCoefficients(string expression, vector<int> &coef){ //get coefficients from initially given function
     // i.e if it was 2x + 5y, then we would get {2,5}
     char* tokens;
     tokens = strtok(expression,"+") //strip away the +'s, leaving us with "1a", "44x" etc
@@ -108,7 +111,7 @@ void getCoefficients(String expression, vector<int> coef){ //get coefficients fr
 }
 
 //Switch genes inside the chromosome with a random number based on mutation rate
-void mutate(vector<Chromosome> chromosomeVector)
+void mutate(vector<Chromosome> &chromosomeVector)
 {
     srand(time(NULL));
     int totalGenes;
@@ -131,30 +134,34 @@ void mutate(vector<Chromosome> chromosomeVector)
         //Change the chosen genes inside the chromosomes to a random number between 0 and 30
         for (int i = 0; i < chosenGenes.size(); i++)
         {
-            int chosenChromosome = totalGenes % chromosomeVector[i].genes.size();
+            int specificGene =  totalGenes % chromosomeVector[i].genes.size()-1;
+            int chosenChromosome = specificGene % chromosomeVector[i].genes.size();
+            chromosomeVector[chosenChromosome].genes[specificGene]=(rand() % limit)+1;//might have to check this later
         }
     }
-    else
-    //Vector is empty. No chromosomes to mutate
-    {
-        return;
-    }
+    else return;     //Vector is empty. No chromosomes to mutate
 }
 //function to create a population of chromosomes
 vector<Chromsome> createPopulation(int populationSize,int numGenes){
     vector<Chromosome> population;
     for(int i=0;i<populationSize;i++){
-        population.push_back = Chromosome c(numGenes);
+        population.push_back(Chromosome c(numGenes));
     }
     return population;
 }
 
-void generateGenes(vector<Chromosome> population, int limit){
+//TODO: Write the whole damn thing
+Chromosome crossoverGenes(Chromosome inputChromosome)
+{
+    
+}
+
+void generateGenes(vector<Chromosome> &population, int limit){
     srand(time(NULL));
     for(int i = 0; i< population.size(); i++){
         for(int j = 0; j < population[i].genes.size();j++){
-            int rand = rand() % limit + 1;
-            population[i].genes[j]=rand;
+            int randInt = rand() % limit + 1;
+            population[i].genes[j]=randInt;
         }
     }
 }
