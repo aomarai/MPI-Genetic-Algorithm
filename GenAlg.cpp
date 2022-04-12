@@ -1,5 +1,5 @@
 #include <iostream>
-#include <mpi.h>
+//#include <mpi.h>
 #include <string.h>
 #include <cmath>
 #include <vector>
@@ -10,7 +10,7 @@ class Chromosome
 {
     public:
     vector<int> genes;
-    int fitness;
+    double fitness;
     double probability;
 
     Chromosome(int numGenes){
@@ -77,20 +77,28 @@ int main(int argc, char *argv[]){
 
     //generate chromosomes
     int numGenes = evaluateExpression(expression);
+        cout<<"here1"<<endl;
+
     vector<Chromosome> population;
     createPop(population,10,numGenes);//just using 10 as a base line
+        cout<<"here2"<<endl;
+
     int g_limit = 0;//will change this later to be what ever is on the right of =
     generateGenes(population);
+
+
     
     printChromosomes(population);
     
 
     //loop:
-    
+
     //Evaluate fitness
     for(int i = 0; i < population.size();i++) evaluateFitness(population[i]);
     //Select chromosomes 
-    selection(population, numGenes );
+
+
+        selection(population, numGenes );
 
     //Genecrossover
     //Mutation
@@ -215,18 +223,26 @@ void selection(vector<Chromosome> &population,int numGenes){
         population[i].fitness = 1 / (1+population[i].fitness);
         total = population[i].fitness;
     }
+
     for(int i=0;i<population.size();i++){
         population[i].probability = population[i].fitness / total;
     }
+
     for(int i=0;i<population.size();i++){
         cumulativeProb.push_back(0.0);
         for(int j=0; j<=i; j++){
             cumulativeProb[i] += population[j].probability; 
         }
     }
+
+
     for(int i = 0;i<population.size();i++){
-        double randD = rand() % RAND_MAX;
+        double randD = rand() % RAND_MAX;\
+
+
         for(int j = 0;j<population.size()-1;j++){
+
+
             if(randD <= cumulativeProb[i+1] && randD >= cumulativeProb[i]){
                 //might have to change things here with 
                 Chromosome c(population[i].genes.size());
