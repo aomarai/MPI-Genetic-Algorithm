@@ -77,11 +77,11 @@ int main(int argc, char *argv[]){
 
     //generate chromosomes
     int numGenes = evaluateExpression(expression);
-        cout<<"here1"<<endl;
+
 
     vector<Chromosome> population;
     createPop(population,10,numGenes);//just using 10 as a base line
-        cout<<"here2"<<endl;
+
 
     int g_limit = 0;//will change this later to be what ever is on the right of =
     generateGenes(population);
