@@ -4,6 +4,7 @@
 #include <cmath>
 #include <vector>
 #include <set>
+#include <random>
 #include <ctype.h>
 using namespace std;
 class Chromosome
@@ -40,7 +41,7 @@ void getCoefficients(string expression,vector<int> &coef); //done
 void createPop(vector<Chromosome> &population, int populationSize, int numGenes); //done
 
 //Generates random numbers between 1 - (length of Chromsome - 1). Then cuts the parent chromosome at a cut point and swaps genes with the child chromosome.
-void crossoverGenes(Chromosome &parentChromosome, Chromosome &childChromosome);
+void crossoverGenes(vector<Chromosome> &population);
 
 void generateGenes(vector<Chromosome> &population); //done
 
@@ -80,7 +81,7 @@ int main(int argc, char *argv[]){
 
 
     vector<Chromosome> population;
-    createPop(population,10,numGenes);//just using 10 as a base line
+    createPop(population,6,numGenes);//just using 10 as a base line
 
 
     int g_limit = 0;//will change this later to be what ever is on the right of =
@@ -92,18 +93,20 @@ int main(int argc, char *argv[]){
     
 
     //loop:
-
+    bool complete;
     //Evaluate fitness
-    for(int i = 0; i < population.size();i++) evaluateFitness(population[i]);
-    //Select chromosomes 
+    while(!complete){
 
-
+        for(int i = 0; i < population.size();i++){
+            evaluateFitness(population[i]);
+        }
+        //Select chromosomes 
         selection(population, numGenes );
+        //Genecrossover
+        crossoverGenes(population);
+        //Mutation
 
-    //Genecrossover
-    //Mutation
-    
-        
+    }
     return 0;
 }
 
@@ -191,16 +194,47 @@ void createPop(vector<Chromosome> &population, int populationSize,int numGenes){
 }
 
 //Takes two chromosomes and crosses their genes at a given crossover index in the gene list
-void crossoverGenes(Chromosome &parentChromosome, Chromosome &childChromosome)
+void crossoverGenes(vector<Chromosome> &population)
 {
     srand(time(NULL));
-    int crossoverPoint = rand() % (parentChromosome.genes.size() - 1);
+    vector<int> parents;
+    random_device rd;
+    mt19937 gen(rd());
+    uniform_real_distribution<float> distribution(0.0, 1.0);
 
-    //Replace the parent chromosome's genes with the child chromosome's genes from the crossover point onward
-    for (int i = crossoverPoint; i < parentChromosome.genes.size(); i++)
+    /*
+    Select the parents by generating a random number between 0 and 1.
+    If that number is smaller than the crossover rate, then add the index of the chromosome to the vector of parents.
+    */
+    for (int i = 0; i < population.size(); i++)
     {
-        parentChromosome.genes[i] = childChromosome.genes[i];
+        float randCutNum = distribution(gen);
+        if (randCutNum < g_crossoverRate)
+        {
+            parents.push_back(i);
+        }
     }
+
+    //Crossross over all the parents with each other from the cut point onwards using the parent indexes
+    for (int i = 0; i < parents.size(); i++)
+    {
+        int cutPoint = rand() % (population[0].genes.size() - 1);
+        for (int j = i + 1; j < parents.size(); j++)
+        {
+            for (int k = cutPoint; k < population[0].genes.size(); k++)
+            {
+                int temp = population[parents[i]].genes[k];
+                population[parents[i]].genes[k] = population[parents[j]].genes[k];
+                population[parents[j]].genes[k] = temp;
+            }
+        }
+    }
+
+    // //Replace the parent chromosome's genes with the child chromosome's genes from the crossover point onward
+    // for (int i = cutPoint; i < parentChromosome.genes.size(); i++)
+    // {
+    //     parentChromosome.genes[i] = childChromosome.genes[i];
+    // }
 }
 
 void generateGenes(vector<Chromosome> &population){//works as intended
@@ -213,21 +247,24 @@ void generateGenes(vector<Chromosome> &population){//works as intended
     }
 }
 
-
 void selection(vector<Chromosome> &population,int numGenes){
+    // Take population, compute fitness of each chromosome,
+    //then calculate the probably of each chromosome to be selected
+    //Then get the cumulative probability
     srand((unsigned)time(NULL));
-    int total;
+    double total;
     vector<double> cumulativeProb;
     vector<Chromosome> pop2;
+    //computing the fitness
     for(int i = 0;i<population.size();i++){
         population[i].fitness = 1 / (1+population[i].fitness);
-        total = population[i].fitness;
+        total += population[i].fitness;
     }
-
+    //probability of each chromosome
     for(int i=0;i<population.size();i++){
         population[i].probability = population[i].fitness / total;
     }
-
+    //cumulative probability
     for(int i=0;i<population.size();i++){
         cumulativeProb.push_back(0.0);
         for(int j=0; j<=i; j++){
@@ -235,21 +272,31 @@ void selection(vector<Chromosome> &population,int numGenes){
         }
     }
 
-
+    //selection of the chromosomes
     for(int i = 0;i<population.size();i++){
-        double randD = rand() % RAND_MAX;\
+        double randD = rand() % RAND_MAX;
 
-
+        //looping through the population to determine which chromosome we will copy
         for(int j = 0;j<population.size()-1;j++){
 
-
-            if(randD <= cumulativeProb[i+1] && randD >= cumulativeProb[i]){
+            // TO do: This check could result in early chromosomes being treated unfairly compared to later chromsomes
+            if(randD <= cumulativeProb[j+1] && randD >= cumulativeProb[j]){
                 //might have to change things here with 
-                Chromosome c(population[i].genes.size());
-                c.copy(population[i]);
+                Chromosome c(population[j+1].genes.size()); 
+                c.copy(population[j+1]);
+                pop2.push_back(c);
+            }else{
+                Chromosome c(population[j].genes.size());
+                c.copy(population[j]);
+                pop2.push_back(c);
             }
         }
+        // if there are too many chromosomes that were selected, pick one randomly?
     }
+    for(int i=0;i<population.size();i++){
+        population[i]=pop2[i];
+    }
+    pop2.clear();
 }
 
 //Print out the the population's genes by chromosome
@@ -265,4 +312,3 @@ void printChromosomes(vector<Chromosome> &population)
         cout << endl;
     }
 }
-
