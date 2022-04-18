@@ -1,0 +1,106 @@
+Read in target value:30
+Read in coefficients:
+Chromosome 0's Genes: 30 30 2 8 
+Chromosome 1's Genes: 19 0 25 0 
+Chromosome 2's Genes: 3 26 27 13 
+Chromosome 3's Genes: 0 17 5 7 
+Chromosome 4's Genes: 21 0 1 7 
+Chromosome 5's Genes: 11 3 6 23 
+Chromosome 6's Genes: 29 3 0 14 
+Chromosome 7's Genes: 7 26 19 6 
+Chromosome 8's Genes: 23 21 14 9 
+Chromosome 9's Genes: 19 9 9 20 
+Chromosome 10's Genes: 2 5 1 1 
+Chromosome 11's Genes: 20 6 8 11 
+Chromosome 12's Genes: 4 9 16 16 
+Chromosome 13's Genes: 11 20 8 9 
+Chromosome 14's Genes: 23 6 21 0 
+Chromosome 15's Genes: 30 7 4 23 
+Chromosome 16's Genes: 26 19 30 15 
+Chromosome 17's Genes: 26 9 4 26 
+Chromosome 18's Genes: 12 3 27 2 
+Chromosome 19's Genes: 10 4 11 14 
+Chromosome 20's Genes: 14 27 30 23 
+Chromosome 21's Genes: 16 5 1 6 
+Chromosome 22's Genes: 11 20 4 11 
+Chromosome 23's Genes: 28 9 1 23 
+Chromosome 24's Genes: 26 0 7 19 
+My fitness: 98.000000
+My fitness: 64.000000
+My fitness: 158.000000
+My fitness: 47.000000
+My fitness: 22.000000
+My fitness: 97.000000
+My fitness: 61.000000
+My fitness: 110.000000
+My fitness: 113.000000
+My fitness: 114.000000
+My fitness: 11.000000
+My fitness: 70.000000
+My fitness: 104.000000
+My fitness: 81.000000
+My fitness: 68.000000
+My fitness: 118.000000
+My fitness: 184.000000
+My fitness: 130.000000
+My fitness: 77.000000
+My fitness: 77.000000
+My fitness: 220.000000
+My fitness: 23.000000
+My fitness: 77.000000
+My fitness: 111.000000
+My fitness: 93.000000
+My fitness: 11.000000
+My fitness: 79.000000
+My fitness: 122.000000
+My fitness: 71.000000
+My fitness: 14.000000
+My fitness: 70.000000
+My fitness: 29.000000
+My fitness: 48.000000
+My fitness: 77.000000
+My fitness: 115.000000
+My fitness: 129.000000
+My fitness: 109.000000
+My fitness: 137.000000
+My fitness: 104.000000
+My fitness: 69.000000
+My fitness: 114.000000
+My fitness: 121.000000
+My fitness: 114.000000
+My fitness: 98.000000
+My fitness: 114.000000
+My fitness: 151.000000
+My fitness: 77.000000
+My fitness: 182.000000
+My fitness: 58.000000
+My fitness: 22.000000
+My fitness: 50.000000
+My fitness: 46.000000
+My fitness: 56.000000
+My fitness: 11.000000
+My fitness: 51.000000
+My fitness: 115.000000
+My fitness: 11.000000
+My fitness: 30.000000
+My fitness: 98.000000
+My fitness: 68.000000
+My fitness: 18.000000
+My fitness: 114.000000
+My fitness: 114.000000
+My fitness: 109.000000
+My fitness: 20.000000
+My fitness: 14.000000
+My fitness: 71.000000
+My fitness: 14.000000
+My fitness: 11.000000
+My fitness: 3.000000
+My fitness: 11.000000
+My fitness: 22.000000
+My fitness: 112.000000
+My fitness: 10.000000
+My fitness: 1.000000
+Iteration Number: 2
+index of sol: 24
+Coefficients: 1, 2, 3, 4, 
+Solution Chromosome 24's Genes: 12 4 1 2 

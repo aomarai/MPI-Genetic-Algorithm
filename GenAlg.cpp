@@ -46,11 +46,12 @@ void crossoverGenes(vector<Chromosome> &population);
 void generateGenes(vector<Chromosome> &population); //done
 
 void selection(vector<Chromosome> &population, int numGenes);
+int selectionHelper(vector<double>  cumulativeProb, double randomNum);
 //Select random genes from the genepool and replace those genes with new randomized genes
-void mutate(Chromosome inputChromosome);
+void mutate(vector<Chromosome> &population);
 
 void printChromosomes(vector<Chromosome> &population);
-
+int checkForSolution(vector<Chromosome> &population);
 int g_numChromosomes;
 double g_mutationRate;
 double g_crossoverRate;
@@ -64,7 +65,6 @@ int main(int argc, char *argv[]){
     string expression = argv[1];
     getCoefficients(expression, g_coefficients);
     cout<<"Read in target value:"<<g_limit<<"\nRead in coefficients:\n";
-    for(int i =0; i < g_coefficients.size(); i++) cout<<"Coefficient "<<i<<": "<<g_coefficients[i]<<"\n";
     //initialize #chromosomes, mutation rate, crossover rate...
     
     
@@ -72,52 +72,83 @@ int main(int argc, char *argv[]){
     
     // Arguments: "Expression", numChromosomes
     g_chromosomeLength = g_coefficients.size();
-    g_numChromosomes = 48;
-    g_mutationRate = .2;
-    g_crossoverRate = .4;
+    g_numChromosomes = 25;
+    g_mutationRate = 0.1;//change later
+    g_crossoverRate = .25;
 
     //generate chromosomes
     int numGenes = evaluateExpression(expression);
 
 
     vector<Chromosome> population;
-    createPop(population,6,numGenes);//just using 10 as a base line
-
-
-    int g_limit = 0;//will change this later to be what ever is on the right of =
+    createPop(population,g_numChromosomes,numGenes);
     generateGenes(population);
-
-
-    
     printChromosomes(population);
-    
-
     //loop:
-    bool complete;
+    int indexOfsol = -1;
+    bool complete = false;
     //Evaluate fitness
-    while(!complete){
-
-        for(int i = 0; i < population.size();i++){
-            evaluateFitness(population[i]);
-        }
+    for(int i = 0; i < population.size();i++){
+        evaluateFitness(population[i]);
+    }
+    indexOfsol = checkForSolution(population);
+    if(indexOfsol > -1){
+            complete = true;
+    }
+    int iterNum = 0;
+    while(!complete && iterNum < 150){
         //Select chromosomes 
         selection(population, numGenes );
         //Genecrossover
         crossoverGenes(population);
         //Mutation
-
+        mutate(population);
+        for(int i = 0; i < population.size();i++){
+            evaluateFitness(population[i]);
+        }
+        indexOfsol = checkForSolution(population);
+        if(indexOfsol!=-1){
+            complete = true;
+        }
+        iterNum++;
     }
+    printf("Iteration Number: %d\n", iterNum);
+    cout<<"index of sol: "<<indexOfsol<<endl;
+    if(indexOfsol !=-1){
+        printf("Coefficients: ");
+        for(int i =0; i < g_coefficients.size(); i++) cout<<""<<g_coefficients[i]<<", ";
+        printf("\n");
+        printf("Solution Chromosome %d's Genes: ", indexOfsol);
+        for (int j = 0; j < population[indexOfsol].genes.size(); j++)
+        {
+            printf("%d ", population[indexOfsol].genes[j]);
+        }
+    } else printf("No solution found.\n");
+
     return 0;
 }
 
+
+int checkForSolution(vector<Chromosome> &population){
+    for(int i = 0;i < population.size();i++){
+        //printf("Fitness gram pacer test %f\n", population[i].fitness);
+        if(population[i].fitness<=1){
+            return i;
+        }
+    }
+    return -1;
+}
 //  This is responsible for taking each chromosome and calculating its fitness value. 
 // it assumes that chromosomeLength and coefficients are global (for now)
 void evaluateFitness(Chromosome &chrom){
     int tempSum = 0; 
     for (int i = 0; i < g_chromosomeLength; i++){ //chromsomeLength is the same as the number of coefficients in the function
-        tempSum = tempSum + (chrom.genes[i] * g_coefficients[i]); //this will not work without coefficients
+        tempSum += (chrom.genes[i] * g_coefficients[i]); //this will not work without coefficients
     }
-    chrom.fitness = abs(tempSum - g_limit); // the absolute value of the difference between tempSum and the target = fitness.
+    //chrom.fitness = ((double)1.0 / ( 1.0 + abs(tempSum - g_limit))); // the absolute value of the difference between tempSum and the target = fitness.
+    chrom.fitness = abs(tempSum - g_limit);
+    printf("My fitness: %f\n", chrom.fitness);
+   // double percentInaccurate = abs(tempSum - g_limit) / g_limit;
     // A value close to 0 means it is more fit. Farther from 0 means it is less fit.
 }
 // gets the number of letter variables from the expression
@@ -158,32 +189,50 @@ void getCoefficients(string expression, vector<int> &coef){ //works as intended
 void mutate(vector<Chromosome> &chromosomeVector)
 {
     srand(time(NULL));
+    //srand(0);
     int totalGenes;
-    set<int> chosenGenes;
-
+    vector<int> chosenGenes;
     //Check if vector is empty
     if (!chromosomeVector.empty())
     {
         //Calculate total number of genes
-        totalGenes = chromosomeVector[0].genes.size() * g_numChromosomes;
+        totalGenes = g_chromosomeLength * g_numChromosomes;
         int numMutations = g_mutationRate * totalGenes;
-        
+        //printf("Genes: %d\n", totalGenes);
+        //printf("Num mutations expected: %d\n", numMutations);
         //Keep generating numbers until there is the expected amount of mutations
         while (chosenGenes.size() < numMutations)
         {
             int genes = rand() % totalGenes + 1;
-            chosenGenes.insert(genes);
+            chosenGenes.push_back(genes);
         }
 
-        //Change the chosen genes inside the chromosomes to a random number between 0 and 30
+        //Change the chosen genes inside the chromosomes to a random number between 0 and target (g_limit)
+        //cout<<"past while loop"<<endl;
         for (int i = 0; i < chosenGenes.size(); i++)
-        {
-            int specificGene =  totalGenes % chromosomeVector[i].genes.size()-1;
+        {   
+            int indexOfChromosome = chosenGenes[i] / g_chromosomeLength; // Get the index of the chrosomome.
+            //printf("Index of chromosome: %d\n", indexOfChromosome);
+            // IF we have 6 chrosomsomes of length 4 and we want the 17th gene, 17 / 4 = 4
+            int indexOfGene = chosenGenes[i] % g_chromosomeLength;
+            //printf("Gene index: %d\n", indexOfGene);
+            // If we have 6 chromosomes of length 4 and we need to know the index of the exact gene, 17 % 4 = 1
+            // 4 * 4 + 1 =17
+            chromosomeVector[indexOfChromosome].genes[indexOfGene] = (rand() % g_limit)+1; // set that targeted gene to a number between 0 and g_limit
+/*          
+            cout<<"tg = "<<totalGenes<<endl;
+            cout<<"chromo size = "<<chromosomeVector[i].genes.size()<<endl;
+            int specificGene =  chosenGenes[i];
+            cout<<"specificGene = "<<specificGene<<endl;
             int chosenChromosome = specificGene % chromosomeVector[i].genes.size();
-            chromosomeVector[chosenChromosome].genes[specificGene]=(rand() % g_limit)+1;//TODO: might have to check this later
+            cout<<"chosen chromosome = "<<chosenChromosome<<endl;
+            cout<<g_limit<<endl;
+            chromosomeVector[chosenChromosome].genes[specificGene]=(rand() % g_limit)+1;//TODO: might have to check this later */
         }
+        //cout<<"past for loop"<<endl;
     }
-    else return;     //Vector is empty. No chromosomes to mutate
+    else 
+        return;     //Vector is empty. No chromosomes to mutate
 }
 //function to create a population of chromosomes
 void createPop(vector<Chromosome> &population, int populationSize,int numGenes){//works as intended
@@ -197,6 +246,7 @@ void createPop(vector<Chromosome> &population, int populationSize,int numGenes){
 void crossoverGenes(vector<Chromosome> &population)
 {
     srand(time(NULL));
+    //srand(0);
     vector<int> parents;
     random_device rd;
     mt19937 gen(rd());
@@ -229,16 +279,11 @@ void crossoverGenes(vector<Chromosome> &population)
             }
         }
     }
-
-    // //Replace the parent chromosome's genes with the child chromosome's genes from the crossover point onward
-    // for (int i = cutPoint; i < parentChromosome.genes.size(); i++)
-    // {
-    //     parentChromosome.genes[i] = childChromosome.genes[i];
-    // }
 }
 
 void generateGenes(vector<Chromosome> &population){//works as intended
     srand(time(NULL));
+    //srand(0);
     for(int i = 0; i< population.size(); i++){
         for(int j = 0; j < population[i].genes.size();j++){
             int randInt = rand() % (g_limit + 1);
@@ -252,7 +297,8 @@ void selection(vector<Chromosome> &population,int numGenes){
     //then calculate the probably of each chromosome to be selected
     //Then get the cumulative probability
     srand((unsigned)time(NULL));
-    double total;
+    //srand(0);
+    double total = 0.0;
     vector<double> cumulativeProb;
     vector<Chromosome> pop2;
     //computing the fitness
@@ -270,33 +316,38 @@ void selection(vector<Chromosome> &population,int numGenes){
         for(int j=0; j<=i; j++){
             cumulativeProb[i] += population[j].probability; 
         }
+        //cout<<"cumuProb at i = "<<cumulativeProb[i]<<endl;
     }
 
     //selection of the chromosomes
-    for(int i = 0;i<population.size();i++){
-        double randD = rand() % RAND_MAX;
-
         //looping through the population to determine which chromosome we will copy
-        for(int j = 0;j<population.size()-1;j++){
-
-            // TO do: This check could result in early chromosomes being treated unfairly compared to later chromsomes
-            if(randD <= cumulativeProb[j+1] && randD >= cumulativeProb[j]){
-                //might have to change things here with 
-                Chromosome c(population[j+1].genes.size()); 
-                c.copy(population[j+1]);
-                pop2.push_back(c);
-            }else{
-                Chromosome c(population[j].genes.size());
-                c.copy(population[j]);
-                pop2.push_back(c);
-            }
-        }
-        // if there are too many chromosomes that were selected, pick one randomly?
+    for(int i = 0;i<population.size();i++){
+        double randD = ((double)rand() / (RAND_MAX));
+        int indexOfSelectedChromosome = selectionHelper(cumulativeProb, randD);
+     //   printf("Selected chromosome: %d\n", indexOfSelectedChromosome);
+        Chromosome c(population[indexOfSelectedChromosome].genes.size());
+        c.copy(population[indexOfSelectedChromosome]);
+        pop2.push_back(c);
     }
     for(int i=0;i<population.size();i++){
         population[i]=pop2[i];
     }
     pop2.clear();
+}
+
+
+int selectionHelper(vector<double> cumulativeProb, double randomNum){
+  double diff = 99.9;
+  int indexOfClosest = 0;
+  for(int i = 0; i < cumulativeProb.size(); i++){
+
+    double tempDiff = abs(cumulativeProb[i]-randomNum);
+    if(tempDiff < diff){
+      diff = tempDiff;
+      indexOfClosest = i;
+    }
+  }
+  return indexOfClosest;
 }
 
 //Print out the the population's genes by chromosome
