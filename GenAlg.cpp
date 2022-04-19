@@ -60,6 +60,8 @@ int targetValue; //Most fit functions will produce this value
 vector<int> g_coefficients; 
 int g_limit;
 int g_target;
+double g_tolerance;
+int g_iterationLimit;
 
 int main(int argc, char *argv[]){
     string expression = argv[1];
@@ -67,14 +69,14 @@ int main(int argc, char *argv[]){
     cout<<"Read in target value:"<<g_limit<<"\nRead in coefficients:\n";
     //initialize #chromosomes, mutation rate, crossover rate...
     
-    
-    //TODO: HARDCODED! CHANGE LATER!
-    
     // Arguments: "Expression", numChromosomes
     g_chromosomeLength = g_coefficients.size();
-    g_numChromosomes = 25;
-    g_mutationRate = 0.1;//change later
+    g_numChromosomes = 100;
+    g_mutationRate = .2;//change later
     g_crossoverRate = .25;
+    g_tolerance = 0;
+    g_iterationLimit = 1500;
+    
 
     //generate chromosomes
     int numGenes = evaluateExpression(expression);
@@ -83,7 +85,7 @@ int main(int argc, char *argv[]){
     vector<Chromosome> population;
     createPop(population,g_numChromosomes,numGenes);
     generateGenes(population);
-    printChromosomes(population);
+    
     //loop:
     int indexOfsol = -1;
     bool complete = false;
@@ -96,7 +98,7 @@ int main(int argc, char *argv[]){
             complete = true;
     }
     int iterNum = 0;
-    while(!complete && iterNum < 150){
+    while(!complete && iterNum < g_iterationLimit){
         //Select chromosomes 
         selection(population, numGenes );
         //Genecrossover
@@ -112,6 +114,7 @@ int main(int argc, char *argv[]){
         }
         iterNum++;
     }
+    printChromosomes(population);
     printf("Iteration Number: %d\n", iterNum);
     cout<<"index of sol: "<<indexOfsol<<endl;
     if(indexOfsol !=-1){
@@ -132,7 +135,7 @@ int main(int argc, char *argv[]){
 int checkForSolution(vector<Chromosome> &population){
     for(int i = 0;i < population.size();i++){
         //printf("Fitness gram pacer test %f\n", population[i].fitness);
-        if(population[i].fitness<=1){
+        if(population[i].fitness<=(g_tolerance * g_limit)){
             return i;
         }
     }
@@ -147,7 +150,7 @@ void evaluateFitness(Chromosome &chrom){
     }
     //chrom.fitness = ((double)1.0 / ( 1.0 + abs(tempSum - g_limit))); // the absolute value of the difference between tempSum and the target = fitness.
     chrom.fitness = abs(tempSum - g_limit);
-    printf("My fitness: %f\n", chrom.fitness);
+    //printf("My fitness: %f\n", chrom.fitness);
    // double percentInaccurate = abs(tempSum - g_limit) / g_limit;
     // A value close to 0 means it is more fit. Farther from 0 means it is less fit.
 }
@@ -165,7 +168,6 @@ int evaluateExpression(string expression){
 //get coefficients from initially given function
 void getCoefficients(string expression, vector<int> &coef){ //works as intended
     // i.e if it was 2x + 5y, then we would get {2,5}
-
     //string expression = "22x + 555y + 66z = 50";
     int startIndex = -1;
     int endIndex = -1;
@@ -181,8 +183,6 @@ void getCoefficients(string expression, vector<int> &coef){ //works as intended
     } 
     string afterEquals = expression.substr(expression.find("=")+1); // get number after = sign. Ie: in 20x + 50y = 10, get " 10"
     g_limit = stoi(afterEquals); // set our fitness target to that value
-
-
 }
 
 //Switch genes inside the chromosome with a random number based on mutation rate
@@ -203,7 +203,8 @@ void mutate(vector<Chromosome> &chromosomeVector)
         //Keep generating numbers until there is the expected amount of mutations
         while (chosenGenes.size() < numMutations)
         {
-            int genes = rand() % totalGenes + 1;
+            int genes = rand() % totalGenes;
+            // int genes = rand() % totalGenes + 1; // old version
             chosenGenes.push_back(genes);
         }
 
