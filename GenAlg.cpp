@@ -64,6 +64,13 @@ double g_tolerance;
 int g_iterationLimit;
 
 int main(int argc, char *argv[]){
+/// Start with openMP
+/// Maybe use MPI
+
+// Analyze pieces of program separately (in terms of speedup)
+
+
+
     string expression = argv[1];
     getCoefficients(expression, g_coefficients);
     cout<<"Read in target value:"<<g_limit<<"\nRead in coefficients:\n";
@@ -83,6 +90,9 @@ int main(int argc, char *argv[]){
 
 
     vector<Chromosome> population;
+
+    // WE SHOULD PARALLELIZE THIS.
+    // Give each processor its index and working range to modify
     createPop(population,g_numChromosomes,numGenes);
     generateGenes(population);
     
@@ -90,7 +100,7 @@ int main(int argc, char *argv[]){
     int indexOfsol = -1;
     bool complete = false;
     //Evaluate fitness
-    for(int i = 0; i < population.size();i++){
+    for(int i = 0; i < population.size();i++){//this can be parallelized
         evaluateFitness(population[i]);
     }
     indexOfsol = checkForSolution(population);
@@ -105,7 +115,7 @@ int main(int argc, char *argv[]){
         crossoverGenes(population);
         //Mutation
         mutate(population);
-        for(int i = 0; i < population.size();i++){
+        for(int i = 0; i < population.size();i++){//this can be parallelized 
             evaluateFitness(population[i]);
         }
         indexOfsol = checkForSolution(population);
@@ -132,7 +142,7 @@ int main(int argc, char *argv[]){
 }
 
 
-int checkForSolution(vector<Chromosome> &population){
+int checkForSolution(vector<Chromosome> &population){//this can be parallelized
     for(int i = 0;i < population.size();i++){
         //printf("Fitness gram pacer test %f\n", population[i].fitness);
         if(population[i].fitness<=(g_tolerance * g_limit)){
@@ -143,7 +153,7 @@ int checkForSolution(vector<Chromosome> &population){
 }
 //  This is responsible for taking each chromosome and calculating its fitness value. 
 // it assumes that chromosomeLength and coefficients are global (for now)
-void evaluateFitness(Chromosome &chrom){
+void evaluateFitness(Chromosome &chrom){ //this can be parallelized
     int tempSum = 0; 
     for (int i = 0; i < g_chromosomeLength; i++){ //chromsomeLength is the same as the number of coefficients in the function
         tempSum += (chrom.genes[i] * g_coefficients[i]); //this will not work without coefficients
@@ -236,6 +246,8 @@ void mutate(vector<Chromosome> &chromosomeVector)
         return;     //Vector is empty. No chromosomes to mutate
 }
 //function to create a population of chromosomes
+
+// GOOD CANDIDATE FOR PARALLELIZATION
 void createPop(vector<Chromosome> &population, int populationSize,int numGenes){//works as intended
     for(int i=0;i<populationSize;i++){
         Chromosome c(numGenes);
