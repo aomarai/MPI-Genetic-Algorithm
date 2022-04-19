@@ -1,11 +1,12 @@
 #include <iostream>
-//#include <mpi.h>
+#include <mpi.h>
 #include <string.h>
 #include <cmath>
 #include <vector>
 #include <set>
 #include <random>
 #include <ctype.h>
+#include <omp.h>
 using namespace std;
 class Chromosome
 {
@@ -15,9 +16,10 @@ class Chromosome
     double probability;
 
     Chromosome(int numGenes){
-        for(int i = 0; i < numGenes; i++){
-            genes.push_back(0);
-        }
+        #pragma omp parallel for
+            for(int i = 0; i < numGenes; i++){
+                genes.push_back(0);
+            }
     }
     void copy(Chromosome &chrom){
         for(int i =0; i < chrom.genes.size();i++){
@@ -75,40 +77,55 @@ int main(int argc, char *argv[]){
     getCoefficients(expression, g_coefficients);
     cout<<"Read in target value:"<<g_limit<<"\nRead in coefficients:\n";
     //initialize #chromosomes, mutation rate, crossover rate...
-    
+    omp_set_num_threads(4);
     // Arguments: "Expression", numChromosomes
     g_chromosomeLength = g_coefficients.size();
-    g_numChromosomes = 100;
-    g_mutationRate = .2;//change later
+    g_numChromosomes = 1000;
+    g_mutationRate = .1;//change later
     g_crossoverRate = .25;
     g_tolerance = 0;
-    g_iterationLimit = 1500;
+    g_iterationLimit = 100;
     
 
     //generate chromosomes
     int numGenes = evaluateExpression(expression);
-
+    double totalTimeElapsed = 0.0;
 
     vector<Chromosome> population;
 
     // WE SHOULD PARALLELIZE THIS.
     // Give each processor its index and working range to modify
+    double start = omp_get_wtime();
     createPop(population,g_numChromosomes,numGenes);
+    double done = omp_get_wtime() - start;
+    totalTimeElapsed+=done;
+    printf("TIME TO GENERATE POP: %f\n\n\n", done);
+    start = omp_get_wtime();
     generateGenes(population);
-    
+    done = omp_get_wtime() - start;
+    totalTimeElapsed+=done;
+    printf("TIME TO GENERATE GENES: %f\n\n\n", done);
+
     //loop:
     int indexOfsol = -1;
     bool complete = false;
     //Evaluate fitness
+    start = omp_get_wtime();
+    //#pragma omp parallel for
     for(int i = 0; i < population.size();i++){//this can be parallelized
         evaluateFitness(population[i]);
     }
+    done = omp_get_wtime() - start;
+    totalTimeElapsed+=done;
+    printf("TIME TO EVAL FITNESS: %f\n\n\n", done);
     indexOfsol = checkForSolution(population);
     if(indexOfsol > -1){
             complete = true;
     }
     int iterNum = 0;
-    while(!complete && iterNum < g_iterationLimit){
+    double startLoop = omp_get_wtime();
+    //Begin iterating
+    for (int i = 0; i < g_iterationLimit; i++){
         //Select chromosomes 
         selection(population, numGenes );
         //Genecrossover
@@ -124,7 +141,9 @@ int main(int argc, char *argv[]){
         }
         iterNum++;
     }
-    printChromosomes(population);
+    double loopDone = omp_get_wtime() - startLoop;
+    printf("TIME TO RUN FOR LOOP: %f\n", loopDone);
+    //printChromosomes(population);
     printf("Iteration Number: %d\n", iterNum);
     cout<<"index of sol: "<<indexOfsol<<endl;
     if(indexOfsol !=-1){
@@ -220,6 +239,7 @@ void mutate(vector<Chromosome> &chromosomeVector)
 
         //Change the chosen genes inside the chromosomes to a random number between 0 and target (g_limit)
         //cout<<"past while loop"<<endl;
+        //#pragma omp parallel for
         for (int i = 0; i < chosenGenes.size(); i++)
         {   
             int indexOfChromosome = chosenGenes[i] / g_chromosomeLength; // Get the index of the chrosomome.
@@ -229,16 +249,8 @@ void mutate(vector<Chromosome> &chromosomeVector)
             //printf("Gene index: %d\n", indexOfGene);
             // If we have 6 chromosomes of length 4 and we need to know the index of the exact gene, 17 % 4 = 1
             // 4 * 4 + 1 =17
-            chromosomeVector[indexOfChromosome].genes[indexOfGene] = (rand() % g_limit)+1; // set that targeted gene to a number between 0 and g_limit
-/*          
-            cout<<"tg = "<<totalGenes<<endl;
-            cout<<"chromo size = "<<chromosomeVector[i].genes.size()<<endl;
-            int specificGene =  chosenGenes[i];
-            cout<<"specificGene = "<<specificGene<<endl;
-            int chosenChromosome = specificGene % chromosomeVector[i].genes.size();
-            cout<<"chosen chromosome = "<<chosenChromosome<<endl;
-            cout<<g_limit<<endl;
-            chromosomeVector[chosenChromosome].genes[specificGene]=(rand() % g_limit)+1;//TODO: might have to check this later */
+            chromosomeVector[indexOfChromosome].genes[indexOfGene] = (rand() % g_limit)+1; // set that targeted gene to a number between 0 and g_limit 
+            
         }
         //cout<<"past for loop"<<endl;
     }
@@ -249,6 +261,7 @@ void mutate(vector<Chromosome> &chromosomeVector)
 
 // GOOD CANDIDATE FOR PARALLELIZATION
 void createPop(vector<Chromosome> &population, int populationSize,int numGenes){//works as intended
+   // #pragma omp parallel for
     for(int i=0;i<populationSize;i++){
         Chromosome c(numGenes);
         population.push_back(c);
@@ -284,6 +297,7 @@ void crossoverGenes(vector<Chromosome> &population)
         int cutPoint = rand() % (population[0].genes.size() - 1);
         for (int j = i + 1; j < parents.size(); j++)
         {
+            #pragma omp parallel for
             for (int k = cutPoint; k < population[0].genes.size(); k++)
             {
                 int temp = population[parents[i]].genes[k];
@@ -297,12 +311,13 @@ void crossoverGenes(vector<Chromosome> &population)
 void generateGenes(vector<Chromosome> &population){//works as intended
     srand(time(NULL));
     //srand(0);
-    for(int i = 0; i< population.size(); i++){
-        for(int j = 0; j < population[i].genes.size();j++){
-            int randInt = rand() % (g_limit + 1);
-            population[i].genes[j]=randInt;
+    //#pragma omp parallel for private(j)
+        for(int i = 0; i< population.size(); i++){
+            for(int j = 0; j < population[i].genes.size();j++){
+                int randInt = rand() % (g_limit + 1);
+                population[i].genes[j]=randInt;
+            }
         }
-    }
 }
 
 void selection(vector<Chromosome> &population,int numGenes){

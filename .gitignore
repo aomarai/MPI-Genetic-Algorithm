@@ -4,3 +4,5 @@ genAlg.dSYM/Contents/Info.plist
 genAlg 2
 .vscode/settings.json
 gen
+omp_gen
+GenAlg.cpp
