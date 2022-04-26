@@ -7,6 +7,7 @@
 #include <random>
 #include <ctype.h>
 #include <omp.h>
+#include <fstream>
 using namespace std;
 class Chromosome
 {
@@ -16,7 +17,7 @@ class Chromosome
     double probability;
 
     Chromosome(int numGenes){
-        //#pragma omp parallel for
+     //   #pragma omp parallel for
             for(int i = 0; i < numGenes; i++){
                 genes.push_back(0);
             }
@@ -66,59 +67,59 @@ double g_tolerance;
 int g_iterationLimit;
 
 int main(int argc, char *argv[]){
+    double startMain = omp_get_wtime();
 /// Start with openMP
 /// Maybe use MPI
+//ofstream myFile("results.txt",myFile.app);
 
 // Analyze pieces of program separately (in terms of speedup)
 
 
 
     string expression = argv[1];
-    //getCoefficients(expression, g_coefficients);
+    getCoefficients(expression, g_coefficients);
     cout<<"Read in target value:"<<g_limit<<"\nRead in coefficients:\n";
     //initialize #chromosomes, mutation rate, crossover rate...
     omp_set_num_threads(10);
     // Arguments: "Expression", numChromosomes
-    g_chromosomeLength = 10;//g_coefficients.size();
-    g_numChromosomes = 100000;
+    g_chromosomeLength = g_coefficients.size();
+    g_numChromosomes = 1000;
     g_mutationRate = .1;//change later
     g_crossoverRate = .25;
     g_tolerance = 0;
     g_iterationLimit = 100;
 
     //generate chromosomes
-    int numGenes = 1000;//evaluateExpression(expression);
+    // was 1000
+    int numGenes = evaluateExpression(expression);
     double totalTimeElapsed = 0.0;
-
     vector<Chromosome> population;
-
     // WE SHOULD PARALLELIZE THIS.
     // Give each processor its index and working range to modify
     double start = omp_get_wtime();
-    printf("Trying to grab omp time\n");
-    createPop(population,1000000,numGenes);
+
+    createPop(population,g_numChromosomes,numGenes);
     //cout<<"here\n"<<endl;
     double done = omp_get_wtime() - start;
     //totalTimeElapsed+=done;
-    printf("TIME TO GENERATE POP: %f\n\n\n", done);
+    //myFile<<"time to generate pop "<<done<<endl;
     start = omp_get_wtime();
     generateGenes(population);
     done = omp_get_wtime() - start;
     //totalTimeElapsed+=done;
-    printf("TIME TO GENERATE GENES: %f\n\n\n", done);
-    return 0;
+    //myFile<<"time to generate genes "<<done<<endl;
     //loop:
     int indexOfsol = -1;
     bool complete = false;
     //Evaluate fitness
     start = omp_get_wtime();
-    //#pragma omp parallel for
+    #pragma omp parallel for
     for(int i = 0; i < population.size();i++){//this can be parallelized
         evaluateFitness(population[i]);
     }
     done = omp_get_wtime() - start;
     //totalTimeElapsed+=done;
-    printf("TIME TO EVAL FITNESS: %f\n\n\n", done);
+    printf("TIME TO EVAL FITNESS: %f\n", done);
     indexOfsol = checkForSolution(population);
     if(indexOfsol > -1){
             complete = true;
@@ -126,16 +127,35 @@ int main(int argc, char *argv[]){
     int iterNum = 0;
     double startLoop = omp_get_wtime();
     //Begin iterating
+    double totalTimeSpentOnFitnessEvaluation;
+    double totalTimeSpentOnSelection;
+    double totalTimeSpentOnCrossover;
+    double totalTimeSpentOnMutate;
     for (int i = 0; i < g_iterationLimit; i++){
+        
         //Select chromosomes 
+        start = omp_get_wtime();
         selection(population, numGenes );
+        done = omp_get_wtime() - start;
+        totalTimeSpentOnSelection+=done;
         //Genecrossover
+        start = omp_get_wtime();
         crossoverGenes(population);
+        done = omp_get_wtime() - start;
+        totalTimeSpentOnCrossover+=done;
         //Mutation
+        start = omp_get_wtime();
         mutate(population);
+        done = omp_get_wtime() - start;
+        totalTimeSpentOnMutate+=done;
+        start = omp_get_wtime();
+        //#pragma omp parallel for
         for(int i = 0; i < population.size();i++){//this can be parallelized 
             evaluateFitness(population[i]);
         }
+        done = omp_get_wtime() - start;
+        totalTimeSpentOnFitnessEvaluation+=done;
+        //myFile<<"time to eval fitness "<<done<<endl;
         indexOfsol = checkForSolution(population);
         if(indexOfsol!=-1){
             complete = true;
@@ -158,6 +178,9 @@ int main(int argc, char *argv[]){
         }
     } else printf("No solution found.\n");
 
+    double endMain = omp_get_wtime() - startMain;
+    printf("Total time to run main: %f\nTotal time to eval fitness: %f\nTotal Time spent on selection: %f\nTotal Time spent on mutation: %f\nTotal time spent on crossover:%f\n", endMain, totalTimeSpentOnFitnessEvaluation, totalTimeSpentOnSelection, totalTimeSpentOnMutate, totalTimeSpentOnCrossover);
+    //myFile.close();
     return 0;
 }
 
@@ -261,8 +284,8 @@ void mutate(vector<Chromosome> &chromosomeVector)
 //function to create a population of chromosomes
 
 // GOOD CANDIDATE FOR PARALLELIZATION
-void createPop(vector<Chromosome> &population, int populationSize,int numGenes){//works as intended
-    #pragma omp parallel for private(population)
+void createPop(vector<Chromosome> &population, int populationSize,int numGenes){
+   // #pragma omp parallel for private(population)
         for(int i=0;i<populationSize;i++){
             Chromosome c(numGenes);
             population.push_back(c);
@@ -331,17 +354,20 @@ void selection(vector<Chromosome> &population,int numGenes){
     vector<double> cumulativeProb;
     vector<Chromosome> pop2;
     //computing the fitness
+    #pragma omp parallel for
     for(int i = 0;i<population.size();i++){
         population[i].fitness = 1 / (1+population[i].fitness);
         total += population[i].fitness;
     }
     //probability of each chromosome
+    #pragma omp parallel for
     for(int i=0;i<population.size();i++){
         population[i].probability = population[i].fitness / total;
     }
     //cumulative probability
     for(int i=0;i<population.size();i++){
         cumulativeProb.push_back(0.0);
+        //#pragma omp parallel for
         for(int j=0; j<=i; j++){
             cumulativeProb[i] += population[j].probability; 
         }
@@ -350,6 +376,7 @@ void selection(vector<Chromosome> &population,int numGenes){
 
     //selection of the chromosomes
         //looping through the population to determine which chromosome we will copy
+    //BAD PRAGMA: #pragma omp parallel for
     for(int i = 0;i<population.size();i++){
         double randD = ((double)rand() / (RAND_MAX));
         int indexOfSelectedChromosome = selectionHelper(cumulativeProb, randD);
@@ -358,6 +385,7 @@ void selection(vector<Chromosome> &population,int numGenes){
         c.copy(population[indexOfSelectedChromosome]);
         pop2.push_back(c);
     }
+    #pragma omp parallel for
     for(int i=0;i<population.size();i++){
         population[i]=pop2[i];
     }
