@@ -6,3 +6,8 @@ genAlg 2
 gen
 omp_gen
 GenAlg.cpp
+numChrome1000iterLimit1000
+numChrome1000iterLimit1000.csv
+serial
+serialGen
+titlemedumbass.csv
