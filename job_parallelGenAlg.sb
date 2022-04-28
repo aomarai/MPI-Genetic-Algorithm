@@ -1,0 +1,40 @@
+#!/bin/bash
+#SBATCH --job-name="genAlg"
+#SBATCH --output="outputgenAlg.%j.%N.out"
+#SBATCH --partition=compute
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=24
+#SBATCH --mem=4G
+#SBATCH --account=isu100
+#SBATCH --export=ALL
+#SBATCH -t 00:30:00
+
+module load intel mvapich2
+
+#Run the job
+
+./genAlg 1 "1a + 2b + 3c + 4d = 50" 4Genes1000Chroms.csv 1000 1000
+./genAlg 2 "1a + 2b + 3c + 4d = 50" 4Genes1000Chroms.csv 1000 1000
+./genAlg 4 "1a + 2b + 3c + 4d = 50" 4Genes1000Chroms.csv 1000 1000
+./genAlg 10 "1a + 2b + 3c + 4d = 50" 4Genes1000Chroms.csv 1000 1000
+./genAlg 20 "1a + 2b + 3c + 4d = 50" 4Genes1000Chroms.csv 1000 1000
+
+./genAlg 1 "1a + 2b + 3c + 4d = 50" 4Genes10,000Chroms.csv 10000 1000
+./genAlg 2 "1a + 2b + 3c + 4d = 50" 4Genes10,000Chroms.csv 10000 1000
+./genAlg 4 "1a + 2b + 3c + 4d = 50" 4Genes10,000Chroms.csv 10000 1000
+./genAlg 10 "1a + 2b + 3c + 4d = 50" 4Genes10,000Chroms.csv 10000 1000
+./genAlg 20 "1a + 2b + 3c + 4d = 50" 4Genes10,000Chroms.csv 10000 1000
+
+./genAlg 1 "1a + 2b + 3c + 4d = 50" 4Genes100,000Chroms.csv 100000 1000
+./genAlg 2 "1a + 2b + 3c + 4d = 50" 4Genes100,000Chroms.csv 100000 1000
+./genAlg 4 "1a + 2b + 3c + 4d = 50" 4Genes100,000Chroms.csv 100000 1000
+./genAlg 10 "1a + 2b + 3c + 4d = 50" 4Genes100,000Chroms.csv 100000 1000
+./genAlg 20 "1a + 2b + 3c + 4d = 50" 4Genes100,000Chroms.csv 100000 1000
+
+
+./genAlg 1 "11a + 3b + 7c + 22d + 69e + 13f + 17g + 420h + 3i + 99j + 100k= 50000" 10Genes10,000Chroms.csv 10000 1000
+./genAlg 2 ""11a + 3b + 7c + 22d + 69e + 13f + 17g + 420h + 3i + 99j + 100k= 50000" 10Genes10,000Chroms.csv 10000 1000
+./genAlg 4 "11a + 3b + 7c + 22d + 69e + 13f + 17g + 420h + 3i + 99j + 100k= 50000" 10Genes10,000Chroms.csv 10000 1000
+./genAlg 10 "11a + 3b + 7c + 22d + 69e + 13f + 17g + 420h + 3i + 99j + 100k= 50000" 10Genes10,000Chroms.csv 10000 1000
+./genAlg 20 "11a + 3b + 7c + 22d + 69e + 13f + 17g + 420h + 3i + 99j + 100k= 50000" 10Genes10,000Chroms.csv 10000 1000
