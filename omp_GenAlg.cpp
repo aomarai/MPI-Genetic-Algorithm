@@ -128,11 +128,11 @@ int main(int argc, char *argv[])
 
     // Arguments: "Expression", numChromosomes
     g_chromosomeLength = g_coefficients.size();
-    g_numChromosomes = 1000;
+    g_numChromosomes = 10000;
     g_mutationRate = .1; // change later
     g_crossoverRate = .25;
     g_tolerance = 0;
-    g_iterationLimit = 1000;
+    g_iterationLimit = 100;
 
     // generate chromosomes
     //  was 1000
