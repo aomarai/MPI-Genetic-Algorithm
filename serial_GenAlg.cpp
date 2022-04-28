@@ -6,6 +6,7 @@
 #include <omp.h>
 #include <random>
 #include <ctype.h>
+#include <fstream>
 using namespace std;
 class Chromosome
 {
@@ -65,6 +66,34 @@ double g_tolerance;
 int g_iterationLimit;
 
 int main(int argc, char *argv[]){
+
+    string filename = "serialResults.csv";
+
+    if (argv[2] != NULL)
+        filename = argv[2];
+
+    bool appendColumnNames = false;
+    ifstream fileStream;
+    fileStream.open(filename);
+    if (fileStream.fail())
+        appendColumnNames = true;
+    ofstream myFile(filename, myFile.app);
+    // numThreads,totalTime,totalTime,selectionTime,mutationTime,crossoverTime
+    if (appendColumnNames)
+        myFile << "numThreads"
+               << ","
+               << "totalTime"
+               << ","
+               << "totalTime"
+               << ","
+               << "selectionTime"
+               << ","
+               << "mutationTime"
+               << ","
+               << "crossoverTime" << endl;
+
+
+
     double startMain = omp_get_wtime();
     string expression = argv[1];
     getCoefficients(expression, g_coefficients);
@@ -73,7 +102,7 @@ int main(int argc, char *argv[]){
     
     // Arguments: "Expression", numChromosomes
     g_chromosomeLength = g_coefficients.size();
-    g_numChromosomes = 10000;
+    g_numChromosomes = 1000;
     g_mutationRate = .2;//change later
     g_crossoverRate = .25;
     g_tolerance = 0;
@@ -152,7 +181,8 @@ int main(int argc, char *argv[]){
 
     double endMain = omp_get_wtime() - startMain;
     printf("Total time to run main: %f\nTotal time to eval fitness: %f\nTotal Time spent on selection: %f\nTotal Time spent on mutation: %f\nTotal time spent on crossover:%f\n", endMain, totalTimeSpentOnFitnessEvaluation, totalTimeSpentOnSelection, totalTimeSpentOnMutate, totalTimeSpentOnCrossover);
-    myFile<<","<<endMain<<","<<totalTimeSpentOnFitnessEvaluation<<","<<totalTimeSpentOnSelection<<","<<totalTimeSpentOnMutate<<","<<totalTimeSpentOnCrossover<<endl;
+    myFile << "1" << "," << endMain << "," << totalTimeSpentOnFitnessEvaluation << "," << totalTimeSpentOnSelection << "," << totalTimeSpentOnMutate << "," << totalTimeSpentOnCrossover << endl;
+    myFile.close();
     return 0;
 }
 
